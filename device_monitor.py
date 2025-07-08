@@ -6,21 +6,32 @@ import subprocess
 import time
 import os
 
+
 def ping(ip):
     try:
         output = subprocess.run(["ping", "-n", "1", ip],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-            creationflags=subprocess.CREATE_NO_WINDOW)
-        if "TTL=" in output.stdout: return "UP", ""
-        elif "Request timed out" in output.stdout: return "DOWN", "Timeout"
-        elif "unreachable" in output.stdout: return "DOWN", "Unreachable"
-        else: return "DOWN", "No response"
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        # Debug output
+        print(f"Ping Output for {ip}:", output.stdout)
+        print(f"Ping Error for {ip}:", output.stderr)
+
+        if "TTL=" in output.stdout:
+            return "UP", ""
+        elif "Request timed out" in output.stdout:
+            return "DOWN", "Timeout"
+        elif "unreachable" in output.stdout:
+            return "DOWN", "Unreachable"
+        else:
+            return "DOWN", "No response"
     except Exception as e:
         return "DOWN", str(e)
+
 
 def format_time(seconds):
     m, s = divmod(int(seconds), 60)
     return f"{m}m {s}s" if m else f"{s}s"
+
 
 def bulk_ping(df, camera_states, down_cameras, progress_bar, progress_text):
     total = len(df)
@@ -54,6 +65,7 @@ def bulk_ping(df, camera_states, down_cameras, progress_bar, progress_text):
     for t in threads: t.join()
     progress_text.text("Bulk check complete.")
 
+
 def export_results(df, camera_states):
     output_df = pd.DataFrame([
         {
@@ -67,6 +79,7 @@ def export_results(df, camera_states):
     ])
     output_df.to_csv("checked_background_servers.csv", index=False)
     return output_df
+
 
 def main():
     st.set_page_config(page_title="Device Monitor", layout="wide")
@@ -114,6 +127,7 @@ def main():
         output_df = export_results(df, camera_states)
         st.success("Exported to 'checked_background_servers.csv'")
         st.download_button("Download CSV", data=output_df.to_csv(index=False).encode('utf-8'), file_name="checked_background_servers.csv", mime="text/csv")
+
 
 if __name__ == "__main__":
     main()
